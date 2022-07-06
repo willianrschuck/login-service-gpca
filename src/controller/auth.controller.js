@@ -1,7 +1,6 @@
 const JWT = require("jsonwebtoken");
 
-const service = require("../services/people.service");
-const applicationService = require("../services/applications.service");
+const service = require("../services/auth.service");
 
 async function login(req, res, next) {
     try {
@@ -20,7 +19,7 @@ async function login(req, res, next) {
 
         delete user.password;
 
-        const secondsToExpire = 60 * 60;
+        const secondsToExpire = 4 * 60 * 60; // 4 hours
 
         const token = JWT.sign(
             user,
@@ -42,35 +41,64 @@ async function login(req, res, next) {
     }
 }
 
-async function external(req, res) {
+async function logout(req, res) {
+    try {
 
-    const { token } = req.cookies;
-    const { appId, lastUri } = req.query;
-
-    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-    res.setHeader("Pragma", "no-cache");
-    res.setHeader("Expires", "0");
-
-    if (appId && token) {
-
-        const application = await applicationService.getApplication(appId);
-
-        if (!application) {
-            return res.status(401).json({ "erro": "Aplicação desconhecida" });
+        const { token } = req.body;
+        
+        if (isValid(token)) {
+            service.invalidateToken(token);
         }
 
-        const redirectUrl = application.callback_url
-            + '?token=' + token
-            + (lastUri ? '&lastUri=' + lastUri : '');
-        return res.redirect(301, redirectUrl);
+        res.status(200).json({ message: "Token invalidado" });
+
+    } catch (e) {
+
+        res.status(401).json({ message: "Erro ao invalidar token" });
+
+    }
+}
+
+function isValid(token) {
+    try {
+        JWT.verify(token, process.env.PUBLIC_KEY);
+        return true;
+    } catch (e) {
+        console.log(e)
+        return false;
+    }
+}
+
+async function validate(req, res) {
+
+    try {
+
+        const { token } = req.body;
+
+        const valid = isValid(token);
+        const revoked = await service.isTokenRevoked(token);
+
+        if (!valid) {
+            return res.status(401).json({ message: "Invalid token" });
+        }
+    
+        if (revoked) {
+            return res.status(401).json({ message: "Token revoked" });
+        }
+
+        return res.status(200).json({ message: "Valid token" });
+
+    } catch (e) {
+
+        console.log(e)
+        return res.status(401).json({ message: "Erro interno" });
 
     }
     
-    res.send(req.cookies);
-
 }
 
 module.exports = {
     login,
-    external
+    logout,
+    validate
 }

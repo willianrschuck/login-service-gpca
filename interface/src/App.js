@@ -8,7 +8,6 @@ import {
     
   } from "react-router-dom";
 import Dashboard from "./components/dashboard/Dashboard";
-import PublicDashboard from "./components/dashboard/PublicDashboard";
 import LoginScreen from "./components/login/LoginForm";
 import PrivateRoute from "./components/routing/PrivateRoute";
 import Shell from "./components/shell/Shell";

@@ -1,5 +1,5 @@
 import jwtDecode from "jwt-decode";
-import { createContext, useContext } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { login } from "../service/user-service";
 import { useLocalStorage } from './useLocalStorage'
 
@@ -17,6 +17,43 @@ export const useAuth = () => {
 function useProvideAuth() {
     const [user, setUser] = useLocalStorage('user');
     const [jwt, setJwt] = useLocalStorage('jwt');
+    const [validating, setValidating] = useState(true);
+    
+    useEffect(() => {
+        if (user && jwt) {
+
+            console.log(jwt)
+
+            fetch("http://localhost:3001/api/validate",
+                {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    method: "POST",
+                    body: JSON.stringify({
+                        token: jwt
+                    })
+                }) 
+                .then((res) => {
+                    if (res.status != 200) {
+                        setUser(null);
+                        setJwt(null);
+                    }
+                    setValidating(false);
+                })
+                .catch((e) => {
+                    setUser(null);
+                    setJwt(null);
+                    setValidating(false);
+                });
+                
+        } else {
+
+            setValidating(false);
+
+        }
+    }, []);
 
     const signIn = async (username, password) => {
         const [data, err] = await login(username, password);
@@ -27,7 +64,20 @@ function useProvideAuth() {
         return [data, err];
     }
 
-    const signOut = () => {
+    const signOut = async () => {
+
+        await fetch("http://localhost:3001/api/logout",
+        {
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            method: "POST",
+            body: JSON.stringify({
+                token: jwt
+            })
+        });
+
         setUser(null);
         setJwt(null);
     }
@@ -35,6 +85,7 @@ function useProvideAuth() {
     return {
         user,
         jwt,
+        validating,
         signIn,
         signOut
     }
