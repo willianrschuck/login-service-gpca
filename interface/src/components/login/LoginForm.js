@@ -41,7 +41,7 @@ export default () => {
     document.title = app.name;
 
     if (query.has('appId')) {
-      fetch("http://localhost:3001/api/applictions/"+query.get("appId"))
+      fetch("/api/applictions/"+query.get("appId"))
         .then(res => {
           if (res.status != 200) {
             throw "Login inválido!";

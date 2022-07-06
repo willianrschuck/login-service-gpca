@@ -24,7 +24,7 @@ function useProvideAuth() {
 
             console.log(jwt)
 
-            fetch("http://localhost:3001/api/validate",
+            fetch("/api/validate",
                 {
                     headers: {
                         'Accept': 'application/json',

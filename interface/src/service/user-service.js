@@ -13,7 +13,7 @@ async function login(username, password) {
     };
 
     try {
-        const fetchResponse = await fetch('http://localhost:3001/api/login', requestOptions);
+        const fetchResponse = await fetch('/api/login', requestOptions);
         const data = await fetchResponse.json();
         console.log(data)
         if (fetchResponse.status !== 200) {
@@ -33,7 +33,7 @@ async function getUsers() {
     };
 
     try {
-        const fetchResponse = await fetch("http://localhost:3001/users", requestOptions);
+        const fetchResponse = await fetch("/users", requestOptions);
         const data = await fetchResponse.json();
         return [data, null];
     } catch (error) {
@@ -73,7 +73,7 @@ async function persistUser(user, token) {
     console.log(requestOptions)
 
     try {
-        const fetchResponse = await fetch('http://localhost:3001' + uri, requestOptions);
+        const fetchResponse = await fetch(uri, requestOptions);
         const data = await fetchResponse.json();
         if (fetchResponse.status !== 200) {
             return [null, data];
@@ -88,7 +88,7 @@ async function persistUser(user, token) {
 async function getUserById(id) {
 
     try {
-        const fetchResponse = await fetch('http://localhost:3001/users/' + id);
+        const fetchResponse = await fetch('/users/' + id);
         const data = await fetchResponse.json();
         if (fetchResponse.status !== 200) {
             return [null, data];
