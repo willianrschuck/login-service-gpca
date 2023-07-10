@@ -1,5 +1,4 @@
 const JWT = require("jsonwebtoken");
-
 const service = require("../services/auth.service");
 
 async function login(req, res, next) {
@@ -7,14 +6,12 @@ async function login(req, res, next) {
 
         const { username, password } = req.body;
 
-        const user = await service.getUser(username);
+        const user = await service.getUserByUsername(username);
 
         if (!user || !service.samePassword(password, user.password)) {
-
             return res
                 .status(401)
                 .json({ message: 'Nome de usuário ou senha inválidos' });
-
         }
 
         delete user.password;
@@ -41,21 +38,70 @@ async function login(req, res, next) {
     }
 }
 
-async function logout(req, res) {
+async function getGoogleKey(header, callback) {
+    let response = await fetch('https://www.googleapis.com/oauth2/v1/certs');
+    let keySet = await response.json();
+    callback(null, keySet[header.kid]);
+}
+
+async function googleLogin(req, res, next) {
     try {
 
-        const { token } = req.body;
-        
-        if (isValid(token)) {
-            service.invalidateToken(token);
-        }
+        const { credential } = req.body;
 
-        res.status(200).json({ message: "Token invalidado" });
+        JWT.verify(credential, getGoogleKey, async (err, decoded) => {
+
+            if (err) {
+                return res.status(401).json({ 'auth': 'false', 'message': 'Token inválido.' });
+            }
+
+            if (decoded.aud !== process.env.GOOGLE_CLIENT_ID) {
+                return res.status(401).json({ 'auth': 'false', 'message': 'Login com Google: Domínio inválido.' });
+            }
+
+            const user = await service.getUserByEmail(decoded.email);
+
+            if (!user) {
+                return res.status(401).json({ 'auth': 'false', 'message': 'Login com Google: Usuário local não encontrado.' });
+            }
+
+            delete user.password;
+
+            const secondsToExpire = 4 * 60 * 60; // 4 hours
+
+            const token = JWT.sign(
+                user,
+                process.env.PRIVATE_KEY,
+                {
+                    algorithm: "RS256",
+                    expiresIn: secondsToExpire
+                }
+            );
+
+            res.cookie("token", token, { maxAge: secondsToExpire * 1000 });
+            res.status(200).json({ token });
+
+        });
 
     } catch (e) {
 
-        res.status(401).json({ message: "Erro ao invalidar token" });
+        console.error(`Erro interno.`);
+        next(e);
 
+    }
+}
+
+async function logout(req, res) {
+    try {
+        const { token } = req.body;
+        
+        if (isValid(token)) {
+            await service.invalidateToken(token);
+        }
+
+        res.status(200).json({ message: "Token invalidado" });
+    } catch (e) {
+        res.status(401).json({ message: "Erro ao invalidar token" });
     }
 }
 
@@ -94,11 +140,11 @@ async function validate(req, res) {
         return res.status(401).json({ message: "Erro interno" });
 
     }
-    
 }
 
 module.exports = {
     login,
     logout,
+    googleLogin,
     validate
 }

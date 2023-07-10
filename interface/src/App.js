@@ -1,19 +1,8 @@
-import { MantineProvider, Text } from "@mantine/core";
-import { useState } from "react";
-import {
-    BrowserRouter as Router,
-    Routes,
-    Route,
-    Outlet,
-    
-  } from "react-router-dom";
+import { MantineProvider } from "@mantine/core";
+import { BrowserRouter as Router, Route, Routes, } from "react-router-dom";
+import { ProvideAuth } from "./hooks/useAuth";
 import Dashboard from "./components/dashboard/Dashboard";
 import LoginScreen from "./components/login/LoginForm";
-import PrivateRoute from "./components/routing/PrivateRoute";
-import Shell from "./components/shell/Shell";
-import UserForm from "./components/users/UserForm";
-import UserScreen from "./components/users/UserScreen";
-import { ProvideAuth } from "./hooks/useAuth";
 
 function App() {
 
@@ -30,14 +19,7 @@ function App() {
                         <Route path="/">
                             <Route index element={<Dashboard />} />
                             <Route exact path="login" element={<LoginScreen />} />
-                            <Route element={<PrivateRoute />}>
-                                <Route path="users" element={<Outlet />}>
-                                    <Route index element={<UserScreen />} />
-                                    <Route path="new" element={<UserForm />} />
-                                    <Route path="edit/:id" element={<UserForm />} />
-                                </Route>
-                                <Route path="applications" element={<Shell />} />
-                            </Route>
+                            <Route exact path="admin" element={<LoginScreen />} />
                         </Route>
                         <Route path="*" element={"404!"} />
                     </Routes>

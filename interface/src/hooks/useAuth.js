@@ -1,9 +1,10 @@
 import jwtDecode from "jwt-decode";
 import { createContext, useContext, useEffect, useState } from "react";
-import { login } from "../service/user-service";
-import { useLocalStorage } from './useLocalStorage'
+import { login } from "service/user-service";
+import { useLocalStorage } from 'hooks/useLocalStorage'
+import config from 'config/config.json'
 
-const authContext = createContext();
+const authContext = createContext({});
 
 export function ProvideAuth({ children }) {
     const auth = useProvideAuth();
@@ -22,9 +23,7 @@ function useProvideAuth() {
     useEffect(() => {
         if (user && jwt) {
 
-            console.log(jwt)
-
-            fetch("/api/validate",
+            fetch(`${config.apiEndpoint}/api/validate`,
                 {
                     headers: {
                         'Accept': 'application/json',
@@ -36,13 +35,13 @@ function useProvideAuth() {
                     })
                 }) 
                 .then((res) => {
-                    if (res.status != 200) {
+                    if (res.status !== 200) {
                         setUser(null);
                         setJwt(null);
                     }
                     setValidating(false);
                 })
-                .catch((e) => {
+                .catch(ignored => {
                     setUser(null);
                     setJwt(null);
                     setValidating(false);
@@ -64,9 +63,37 @@ function useProvideAuth() {
         return [data, err];
     }
 
+    async function googleLogin(credential) {
+        try {
+            let response = await fetch(`${config.apiEndpoint}/api/googleLogin`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({credential})
+            });
+
+            let json = await response.json();
+
+            if (response.status !== 200) {
+                return [null, json];
+            }
+            return [json, null];
+        } catch (e) {
+            return [null, e]
+        }
+    }
+
+    const googleSignIn = async (credential) => {
+        let [data, err] = await googleLogin(credential)
+        if (!err) {
+            setJwt(data.token)
+            setUser(jwtDecode(data.token));
+        }
+        return [data, err];
+    }
+
     const signOut = async () => {
 
-        await fetch("http://localhost:3001/api/logout",
+        await fetch(`${config.apiEndpoint}/api/logout`,
         {
             headers: {
                 'Accept': 'application/json',
@@ -87,6 +114,7 @@ function useProvideAuth() {
         jwt,
         validating,
         signIn,
+        googleSignIn,
         signOut
     }
 

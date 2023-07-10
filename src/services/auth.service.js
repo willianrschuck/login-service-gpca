@@ -2,13 +2,30 @@ const db = require("../config/db");
 const bcrypt = require("bcrypt");
 const JWT = require("jsonwebtoken");
 
-async function getUser(username) {
+async function getUserByUsername(username) {
     try {
         
         return await db
             .select("login", "people_type", "e_mail", "password")
             .from("people")
             .where("login", username)
+            .first();
+
+    } catch (e) {
+
+        console.log(e);
+        return null;
+
+    }
+}
+
+async function getUserByEmail(email) {
+    try {
+
+        return await db
+            .select("login", "people_type", "e_mail", "password")
+            .from("people")
+            .where("e_mail", email)
             .first();
 
     } catch (e) {
@@ -66,7 +83,8 @@ async function clearExpiredRevokedTokens() {
 }
 
 module.exports = {
-    getUser,
+    getUserByUsername,
+    getUserByEmail,
     isTokenRevoked,
     samePassword,
     invalidateToken,

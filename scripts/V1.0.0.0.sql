@@ -1,3 +1,10 @@
+CREATE TABLE IF NOT EXISTS people (
+    login varchar(64) CONSTRAINT pk_people PRIMARY KEY,
+    people_type INTEGER,
+    e_mail varchar(128),
+    password varchar(128)
+);
+
 CREATE SEQUENCE seq_applications_id;
 
 CREATE TABLE applications (
@@ -5,6 +12,7 @@ CREATE TABLE applications (
     name VARCHAR(60),
     secret VARCHAR(60),
     callback_url VARCHAR(255),
+    background VARCHAR(255),
     CONSTRAINT applications_pk PRIMARY KEY (id)
 );
 
